@@ -91,7 +91,7 @@ const formCreate = catchAsyncError(
                         Registry_No: registrationNumber,
                         Date_of_First_Submission: formSubmissionDate,
                         Semester: semester,
-                        FeeVoucher: `${process.env.BASE_URL}/Storage/Forms/${ImageRes}`,
+                        FeeVoucher: `/Storage/Forms/${ImageRes}`,
                         Degree: degree,
                         Department: department,
                         Courses: courses,
