@@ -7,7 +7,7 @@ const ErrorHandler = require('../utils/errorHandler')
 const authMiddleware = catchAsyncError(
     async (req, res, next) => {
         const { AcsT } = req.cookies;
-        const AccessToken = AcsT.split("._HHQ")[1]
+        const AccessToken = AcsT?.split("._HHQ")[1]
         if (!AccessToken) {
             return next(new ErrorHandler('unauthorized user', 401))
         }

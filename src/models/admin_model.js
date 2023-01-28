@@ -12,7 +12,8 @@ const AdminSchema = new mongoose.Schema({
     AccessToken: { type: String },
     activation: { type: Boolean },
     authorization: { type: Boolean },
-    CNIC:{type:String,required:true, unique:true}
+    CNIC:{type:String,required:true, unique:true},
+    WhoChangeThisRecord:{type:String },
 }, { timestamps: true })
 
 AdminSchema.methods.generateAccessToken = function () {

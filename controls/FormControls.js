@@ -29,19 +29,20 @@ const programforUser = catchAsyncError(
 
 
 
-// get specific user
+// get specific user form
 const specificUser = catchAsyncError(
     async (req, res, next) => {
-        const { _id } = req.body;
         const validUser = req.User;
+        const _id=req.params.id;
+        // console.log(validUser._id.toString());
         if (validUser) {
             if (!_id) {
                 return next(new ErrorHandler('Incomplete Information', 406))
             }
 
-            const fetchSpecificUser = await users.findOne({ _id });
-            if (fetchSpecificUser) {
-                return res.status(200).json({ user: fetchSpecificUser })
+            const fetchSpecificForm = await Gs10FormModel.findOne({ _id });
+            if (fetchSpecificForm) {
+                return res.status(200).json({ user: fetchSpecificForm })
             }
             return next(new ErrorHandler('user not found!', 202))
         } else {
@@ -99,7 +100,6 @@ const formCreate = catchAsyncError(
                         FeePaid: paidFee,
                     }).save();
 
-                    console.log("hamza");
                     // updating user record
                     await users.findOneAndUpdate({ _id: findUser._id }, {
                         $addToSet: {
@@ -124,11 +124,12 @@ const PopulatedUserForms = catchAsyncError(
         const validUser = req.User;
         if (validUser) {
             const UserPopulatedForm = await users.findOne({ _id: validUser._id }).populate('GS10Form');
+            if (UserPopulatedForm) {
+                res.status(200).json({ GS10Form: UserPopulatedForm?.GS10Form })
+            }else{
+                return next(new ErrorHandler('Resource Not Found!', 404))
+            }
 
-            // signing data into jwt
-            // const UserForms=
-            console.log(UserPopulatedForm);
-            res.status(200).json({ GS10Form: UserPopulatedForm?.GS10Form })
         } else {
             return next(new ErrorHandler('Bad Request', 400))
         }

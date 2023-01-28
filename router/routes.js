@@ -16,11 +16,11 @@ route.post('/logout', authMiddleware, Logout)
 
 
 // auth roles
-route.post('/createRole', authMiddleware, createRole)
-route.get('/getAuthoritesInfo', authMiddleware, fetchRecords)
-route.get('/singleAuthorityInfo/:id', authMiddleware, singleAuthorityInfo)
-route.post('/updateSingleAuthority/update', authMiddleware, updateAuthority)
-route.post('/delete/authority/:id', authMiddleware, deleteAuthority)
+route.post('/admin/createRole', authMiddleware, createRole)
+route.get('/admin/getallroles', authMiddleware, fetchRecords)
+route.get('/admin/singleAuthorityInfo/:id', authMiddleware, singleAuthorityInfo)
+route.post('/admin/Role/update', authMiddleware, updateAuthority)
+route.post('/admin/role/delete/:id', authMiddleware, deleteAuthority)
 
 
 // Program routes
@@ -36,13 +36,13 @@ route.post('/course/delete/:id', authMiddleware, deleteCourse)
 // Form Routes
 route.post('/Form/Create', authMiddleware, formCreate) //uncheck
 route.post('/Form/Program/user', authMiddleware, programforUser) //1
-route.post('/Form/user', authMiddleware, specificUser)
 route.get('/Form/user/Forms', authMiddleware, PopulatedUserForms)
+route.get('/Form/user/:id', authMiddleware, specificUser)
 
 
 // Form Routes for Authority
-route.get('/admin/Forms', authMiddleware, AllGs10Forms)
-route.post('/admin/opr/Form/rqstaporrej', authMiddleware, approveOrReject)
+route.get('/admin/Forms/:formType', authMiddleware, AllGs10Forms)
+route.post('/admin/opr/Form/:userId', authMiddleware, approveOrReject)
 route.post('/admin/opr/Form/update/:id/:role/:status', authMiddleware, updateGs10Form) //uncheck
 
 module.exports = route

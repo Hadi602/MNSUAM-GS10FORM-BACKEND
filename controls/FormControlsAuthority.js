@@ -13,7 +13,8 @@ const AllGs10Forms = catchAsyncError(
     async (req, res, next) => {
         const Admin = req.Admin;
         if (Admin) {
-            const Gs10Form = await Gs10FormModel.find({});
+            const FormType = req.params.formType;
+            const Gs10Form = await Gs10FormModel.find({ Department: { $regex: FormType, $options: 'i' } });
             res.status(200).json({ Gs10Form })
         } else {
             return next(new ErrorHandler('Bad Request', 400))
@@ -26,15 +27,45 @@ const AllGs10Forms = catchAsyncError(
 // form for authority to approve or reject
 const approveOrReject = catchAsyncError(
     async (req, res, next) => {
-        const { isRole } = req.body;
         const Admin = req.Admin;
+        let { userId } = req.params;
+        const { isRole, formStatus, formId ,Reason} = req.body;
         if (Admin) {
-            const Gs10Forms = await Gs10FormModel.find({ AuthoritiesApproval: { $ne: isRole } })
-            // console.log(Gs10Forms);
-            if (Gs10Forms) {
-                res.status(200).json({ Gs10Form: Gs10Forms })
+            const updateFormStatusWithAuthSignature = {
+                Authority: isRole,
+                Status: formStatus,
+                Reason:Reason?Reason:""
+            };
+
+            if (!userId || !isRole || !formStatus || !formId) {
+                return next(new ErrorHandler('Bad Request', 400))
+            }
+
+
+            const updateGs10Form = await Gs10FormModel.findOneAndUpdate({ _id: formId }, {
+                $addToSet: {
+                    AuthoritiesApproval: updateFormStatusWithAuthSignature
+                },
+            }, { new: true })
+
+
+            const checkingFormAuthLength = updateGs10Form.AuthoritiesApproval;
+            if (checkingFormAuthLength.length >= 5 && !checkingFormAuthLength.map((val) => { return val.Status }).includes("Rejected")) {
+
+                const updateFormStatus = await Gs10FormModel.findOneAndUpdate({ _id: formId }, {
+                    FormStatus: "Complete"
+                }, { new: true })
+
+                if (updateFormStatus) {
+                    return res.status(200).json({ Gs10Form: 'Approved and Completed!' })
+                }
+            }
+
+
+            if (updateGs10Form) {
+                return res.status(200).json({ Gs10Form: 'Updated Successfully!' })
             } else {
-                return next(new ErrorHandler('user not found!', 202))
+                return next(new ErrorHandler('form not found!', 400))
             }
         } else {
             return next(new ErrorHandler('Bad Request', 400))
@@ -68,7 +99,7 @@ const updateGs10Form = catchAsyncError(
                 },
             }, { new: true })
             const checking = updateForm.AuthoritiesApproval
-            
+
             if (checking.length >= 4 && !checking.map((val) => { return val.Status }).includes("Rejected")) {
 
                 await Gs10FormModel.findOneAndUpdate({ _id: id }, {

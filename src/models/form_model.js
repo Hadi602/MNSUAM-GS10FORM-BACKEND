@@ -8,7 +8,7 @@ const UG_Form_Schema = new mongoose.Schema({
     Registry_No: { type: String, required: false },
     Date_of_First_Submission: { type: Date, default: Date }, 
     Semester: { type: String, required: true },
-    FeeVoucher: { type: String, required: false },
+    FeeVoucher: { type: String, required: false }, 
     Degree: {
         type: String, 
         required: true,
