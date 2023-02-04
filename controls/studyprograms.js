@@ -11,17 +11,92 @@ const degreeCreation = catchAsyncError(
         if (admin) {
             const findRecord = await courses.findOne({ Degree });
             if (findRecord) {
-                return next(new ErrorHandler('Program already exist!', 202))
+                return next(new ErrorHandler('Program already exist!', 409))
             }
-            await courses.create({
-                Degree: Degree,
-            })
-            return res.status(200).json({ message: "successfuly created!" })
+            const DegreeCreation = await courses({
+                Degree
+            }).save()
+            if (DegreeCreation) {
+                return res.status(201).json({ message: "successfuly created!" })
+            } else {
+                return next(new ErrorHandler('Internal server error', 500))
+            }
         } else {
             return next(new ErrorHandler('Bad Request', 400))
         }
     }
 )
+
+
+
+// fetching all degrees 
+const allDegrees = catchAsyncError(
+    async (req, res, next) => {
+        const admin = req.Admin;
+        if (admin) {
+            const findAllDegrees = await courses.find().select('Degree -_id').lean().exec();
+            if (findAllDegrees) {
+                return res.status(200).json({ message: "All Degree's", Degree: findAllDegrees })
+            } else {
+                return next(new ErrorHandler('Internal server error', 500))
+            }
+        } else {
+            return next(new ErrorHandler('Bad Request', 400))
+        }
+    }
+)
+
+
+
+// Program creation
+const programCreation = catchAsyncError(
+    async (req, res, next) => {
+        const { Degree, Programs } = req.body;
+        const admin = req.Admin;
+        if (admin) {
+            if (!Degree || !Programs) {
+                return next(new ErrorHandler('Bad Request', 400))
+            }
+            const findDegree = await courses.findOne({ Degree });
+            // console.log(Programs);
+            if (findDegree) {
+                const ProgramCreation = await courses.findOneAndUpdate({ Degree }, {
+                    $addToSet: { Program: { $each: Programs } }
+                }, { new: true });
+                if (ProgramCreation) {
+                    return res.status(201).json({ message: "successfuly created!" })
+                } else {
+                    return next(new ErrorHandler('Internal server error', 500))
+                }
+            } else {
+                return next(new ErrorHandler('Not Found!', 404))
+            }
+        } else {
+            return next(new ErrorHandler('Bad Request', 400))
+        }
+    }
+)
+
+
+
+// fetching all Programs 
+const allPrograms = catchAsyncError(
+    async (req, res, next) => {
+        const admin = req.Admin;
+        const { Degree } = req.body;
+        if (admin) {
+            const findAllPrograms = await courses.findOne({ Degree }).select('Program -_id').lean().exec();
+            if (findAllPrograms) {
+                return res.status(200).json({ message: "All Programs associated with this degree.", Programs: findAllPrograms })
+            } else {
+                return next(new ErrorHandler('Internal server error', 500))
+            }
+        } else {
+            return next(new ErrorHandler('Bad Request', 400))
+        }
+    }
+)
+
 
 
 
@@ -30,42 +105,62 @@ const createCourse = catchAsyncError(
     async (req, res, next) => {
         const admin = req.Admin;
         if (admin) {
-            const { Degree, Course_no, Course_name, Credit_hour, Course_status } = req.body;
-            if (!Degree || !Course_no || !Course_name || !Credit_hour || !Course_status) {
+            const { Degree, Program, CoursesDetails } = req.body;
+            console.log(Degree, Program, CoursesDetails);
+            if (!Degree || !Program || CoursesDetails.length < 1) {
                 return next(new ErrorHandler('Incomplete Information', 406))
             }
 
-
             // finding course that already exist in the degree
-            const findCourse = await courses.findOne({ $and: [{ Degree }, { "Courses.Course_no": Course_no }] }).populate("Courses")
-            // console.log(findCourse);
-            if (findCourse) {
-                return next(new ErrorHandler('Course already Exist in this Program!.', 202))
+            const findCourse = await courses.findOne({ $and: [{ Degree }, { Program }] }).select('Degree Program Courses -_id').populate("Courses")
+            if (findCourse.Courses.length>0) {
+                const checkMatch = findCourse.Courses.some(val1 => CoursesDetails.some(val2 => val1.Course_no === val2.Course_no ));
+                if (checkMatch) {
+                    return next(new ErrorHandler('Course already Exist in this Program!.', 409))
+                }
             }
-
             // creating new course in the requested degree
-            const findDegreeAndInsertNewCourse = await courses.findOneAndUpdate({ Degree }, {
+            const findDegreeAndInsertNewCourse = await courses.findOneAndUpdate({ $and: [{ Degree }, { Program }] }, {
                 $addToSet: {
                     Courses: {
-                        Course_no,
-                        Course_name,
-                        Credit_hour,
-                        Course_status
+                        $each: CoursesDetails
                     }
                 },
             }
                 , { new: true }
             );
             if (findDegreeAndInsertNewCourse) {
-                return res.status(200).json({ message: "Successfully created!" })
+                return res.status(201).json({ message: "Successfully created!" })
             } else {
-                return next(new ErrorHandler('Not Found!', 202))
+                return next(new ErrorHandler('Not Found!', 404))
             }
         } else {
             return next(new ErrorHandler('Bad Request', 400))
         }
     }
 )
+
+
+
+
+// fetching all Programs 
+const DetailedPrograms = catchAsyncError(
+    async (req, res, next) => {
+        const admin = req.Admin;
+        if (admin) {
+            const findAllProgramDetails = await courses.find().select('Program Degree Courses createdAt -_id').lean().exec();
+            if (findAllProgramDetails) {
+                
+                return res.status(200).json({ message: "All running Program details.", Programs: findAllProgramDetails })
+            } else {
+                return next(new ErrorHandler('Internal server error', 500))
+            }
+        } else {
+            return next(new ErrorHandler('Bad Request', 400))
+        }
+    }
+)
+
 
 
 
@@ -189,4 +284,4 @@ const deleteCourse = catchAsyncError(
         }
     }
 )
-module.exports = { degreeCreation, createCourse, allCourses, singleDegree, singleCourseInfo, updateSingleCourse, deleteCourse }
+module.exports = { degreeCreation, createCourse, allCourses, singleDegree, singleCourseInfo, updateSingleCourse, deleteCourse, allDegrees, programCreation, allPrograms,DetailedPrograms }

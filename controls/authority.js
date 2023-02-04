@@ -87,7 +87,6 @@ const singleAuthorityInfo = catchAsyncError(
 const updateAuthority = catchAsyncError(
     async (req, res, next) => {
         const { currenRole, updatedEmail, updatedPassword, updatedRole, MyEmail, MyPassword, userId, userName } = req.body;
-        console.log(currenRole, updatedEmail, updatedPassword, updatedRole, MyEmail, MyPassword, userId);
 
         if (!currenRole || !updatedEmail || !updatedPassword || !updatedRole || !userId || !MyEmail || !MyPassword) {
             return next(new ErrorHandler('Incomplete Information', 406))

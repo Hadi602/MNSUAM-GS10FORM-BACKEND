@@ -18,7 +18,7 @@ const usersSchema = new mongoose.Schema({
     UserId: { type: Number },
     CNIC: { type: String, required: true, unique: true },
     Type: { type: String, required: false, },
-    isRole: { type: String, default: "User" },
+    isRole: { type: String, default: "USER" },
     UserImage: { type: String, default: "" },
     GS10Form: [
         {

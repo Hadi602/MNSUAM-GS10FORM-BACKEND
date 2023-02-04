@@ -9,7 +9,7 @@ const ErrorHandler = require('../utils/errorHandler');
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken")
 const hashedToken = require('../utils/hashToken')
-const crypto =require("crypto")
+const crypto = require("crypto")
 
 
 
@@ -53,7 +53,7 @@ const Register = catchAsyncError(
 
 
         // finding existing user
-        const findUser = await users.findOne({ username, email })
+        const findUser = await users.findOne({  $or:[{email},{CNIC}] }).lean().exec()
         if (findUser) {
             return next(new ErrorHandler('This User already Registered!', 400))
         }
@@ -72,7 +72,7 @@ const Register = catchAsyncError(
             CNIC: CNIC
         }).save();
 
-        return res.status(201).json({ success: "Registered Successfully!" });
+        return res.status(201).json({ success: "Registered Successfully!", user });
 
     }
 )
@@ -112,7 +112,7 @@ const OtpVerification = catchAsyncError(async (req, res, next) => {
 
 
 // login
-const Login = catchAsyncError( 
+const Login = catchAsyncError(
     async (req, res, next) => {
         const { email, password } = req.body;
 
@@ -158,7 +158,7 @@ const Login = catchAsyncError(
             // finding existing user and setting token and cookies
             const findUser = await users.findOne({ email }).select("+password")
             if (findUser) {
-            
+
                 // checking that if user already login or not
                 if (findUser.status === true && findUser.activation === true) {
                     return next(new ErrorHandler('User Already Login!', 400))
@@ -190,7 +190,7 @@ const Login = catchAsyncError(
                     generateCookie("AcsT", hashAcsToken, new Date(Date.now() + (1000 * 60 * 30)), res) // for access token cookie age set to 5 minutes
 
 
-                    
+
                     return res.status(200).json({ user: updateUserStatus })
                 } else {
                     return next(new ErrorHandler('Incorrect Password', 400))

@@ -4,12 +4,12 @@ const courses = require('../src/models/courses_model')
 const Gs10FormModel = require('../src/models/form_model')
 const users = require('../src/models/user_model')
 const GS10formPic = require('../utils/imageSetup')
-const jwt=require('jsonwebtoken')
+const jwt = require('jsonwebtoken')
 
 
 
 //  get specific program info for user 
-const programforUser = catchAsyncError( 
+const programforUser = catchAsyncError(
     async (req, res, next) => {
         const validUser = req.User;
         if (validUser) {
@@ -33,7 +33,7 @@ const programforUser = catchAsyncError(
 const specificUser = catchAsyncError(
     async (req, res, next) => {
         const validUser = req.User;
-        const _id=req.params.id;
+        const _id = req.params.id;
         // console.log(validUser._id.toString());
         if (validUser) {
             if (!_id) {
@@ -69,16 +69,18 @@ const formCreate = catchAsyncError(
 
             const findUser = await users.findOne({ _id: validUser._id }).populate('GS10Form')
             // finding that if form already exist or not
-            const user = findUser.GS10Form.find((val, index) => {
-                // not with semester cz semester change but form submit
-                if (registrationNumber === val.Registry_No && studentName === val.Student_Name && regularStudentOrOther === val.RegularORExtra) {
-                    return val
+            if (findUser.GS10Form.length > 1) {
+                const user = findUser.GS10Form.find((val, index) => {
+                    // not with semester cz semester change but form submit
+                    if (registrationNumber === val.Registry_No && studentName === val.Student_Name && regularStudentOrOther === val.RegularORExtra && Semester === val.semester) {
+                        return val
+                    }
+                });
+                if (user) {
+                    return next(new ErrorHandler('This form already exists!', 202))
                 }
-            });
-
-            if (user) {
-                return next(new ErrorHandler('This form already exists!', 202))
             } else {
+                console.log('hamza',findUser.GS10FormSubmissionStatus);
                 // if UGFormSubmissionStatus is off then here it will add to user document and make it true otherwise it will not add it will true by authority with announcement
                 if (findUser.GS10FormSubmissionStatus === 'false') {
                     // saving image in Storage
@@ -108,6 +110,8 @@ const formCreate = catchAsyncError(
                         GS10FormSubmissionStatus: 'true'
                     }, { new: true });
                     res.status(200).json({ message: "Successfully Created.", GS10Form: saveGs10Form })
+                }else{
+                    return next(new ErrorHandler('you cannot submit form right now', 409))
                 }
             }
         } else {
@@ -126,7 +130,7 @@ const PopulatedUserForms = catchAsyncError(
             const UserPopulatedForm = await users.findOne({ _id: validUser._id }).populate('GS10Form');
             if (UserPopulatedForm) {
                 res.status(200).json({ GS10Form: UserPopulatedForm?.GS10Form })
-            }else{
+            } else {
                 return next(new ErrorHandler('Resource Not Found!', 404))
             }
 

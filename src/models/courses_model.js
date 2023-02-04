@@ -1,33 +1,30 @@
-const mongoose=require("mongoose")
+const mongoose = require("mongoose")
 
-const CoursesSchema=new mongoose.Schema({
-    Degree:{
-        type:String,
-        required:true,
-        unique:true
-    }, 
-    Courses:{
-        type:[
+const CoursesSchema = new mongoose.Schema({
+    Degree: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    Program: {
+        type: [],
+        required: false,
+        unique: true
+    },
+    Courses: {
+        type: [
             {
-                Course_no:{type:String, unique:true, index:true}, 
-                Course_name:{type:String,unique:true, index:true}, 
-                Credit_hour:{type:Number, index:true}, 
-                Course_status:{type:String, index:true, enum:["major","minor","complusory","audit"]},
+                Program_name: { type: String },
+                Course_no: { type: String, unique: true, index: true },
+                Course_name: { type: String, unique: true },
+                Credit_hour: { type: Number },
+                Course_status: { type: String, enum: ["MAJOR", "MINOR", "COMPULSORY", "AUDIT"] },
             }
         ]
     }
-    // Courses:[
-    //        {
-    //            course: {
-    //             Course_no:{type:Number, default:45}, 
-    //             Course_name:{type:String,default:"plta"}, 
-    //             Credit_hour:{type:Number,default:34}, 
-    //             Course_status:{type:String,default:"major"},
-    //         }
-    //        }
-    //     ]
-},{timestamps:true})
 
-const Courses=new mongoose.model("Courses",CoursesSchema);
+}, { timestamps: true })
 
-module.exports=Courses
+const Courses = new mongoose.model("Courses", CoursesSchema);
+
+module.exports = Courses

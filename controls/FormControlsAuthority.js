@@ -14,7 +14,9 @@ const AllGs10Forms = catchAsyncError(
         const Admin = req.Admin;
         if (Admin) {
             const FormType = req.params.formType;
-            const Gs10Form = await Gs10FormModel.find({ Department: { $regex: FormType, $options: 'i' } });
+
+            const Gs10Form = await Gs10FormModel.find({ RegularORExtra: { $regex: FormType, $options: 'i' } }).lean().exec();
+
             res.status(200).json({ Gs10Form })
         } else {
             return next(new ErrorHandler('Bad Request', 400))
@@ -29,12 +31,13 @@ const approveOrReject = catchAsyncError(
     async (req, res, next) => {
         const Admin = req.Admin;
         let { userId } = req.params;
-        const { isRole, formStatus, formId ,Reason} = req.body;
+        const { isRole, formStatus, formId, Reason } = req.body;
         if (Admin) {
             const updateFormStatusWithAuthSignature = {
                 Authority: isRole,
                 Status: formStatus,
-                Reason:Reason?Reason:""
+                Reason: Reason ? Reason : "",
+                Date: new Date(Date.now())
             };
 
             if (!userId || !isRole || !formStatus || !formId) {

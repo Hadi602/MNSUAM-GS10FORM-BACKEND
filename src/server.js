@@ -12,6 +12,8 @@ const routes = require('../router/routes')
 const errorHandlerMiddleware = require('../middlewares/error')
 const app = express();
 const rateLimit = require('express-rate-limit')
+const compression = require('compression')
+const mongoSanitize = require('express-mongo-sanitize');
 
 const port = process.env.PORT || 6002;
 
@@ -26,7 +28,21 @@ process.on('uncaughtException', (err) => {
 
 
 
+// setting cors with the specific url
+app.use(cors({
+    credentials: true,
+    origin: ['http://localhost:5173'],
+    methods: ['GET', 'POST'],
+    // allowedHeaders: ['Content-Type','Accept','']
+}))
+
+
+
+
 // Middlewares
+// Set compression before any routes
+app.use(compression({ threshold: 450 })); //smaller than this will not be compress
+app.use(mongoSanitize()); //{ allowDots: true, replaceWith: '_' } can pass these options if needed by default remove ($)and(.) from any rqs
 app.use(express.json({ limit: '30mb' }));
 app.use(cookieParser({ limit: '30mb' }))
 app.use(express.urlencoded({ extended: true }));//nested json data are true
@@ -41,19 +57,10 @@ app.use(helmet.ieNoOpen());
 // preventing mime type sniffing
 app.use(helmet.noSniff());
 // preventing X-Xss 
-app.use(helmet.xssFilter());
+app.use(helmet.xssFilter({}));
 // DNS prefetchingControl
 app.use(helmet.dnsPrefetchControl({ allow: true, }));
 
-
-
-// setting cors with the specific url
-app.use(cors({
-    credentials: true,
-    origin: ['http://localhost:5173'],
-    methods: ['GET', 'POST'],
-    // allowedHeaders: ['Content-Type','Accept','']
-}))
 
 
 
@@ -61,7 +68,7 @@ app.use(cors({
 const limiter = rateLimit({
     windowMs: 5 * 60 * 1000, // 5 minute
     max: 30, // Limit each IP to 30 requests per `window` (here, per 5 minutes)
-    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    standardHeaders: false, // Return rate limit info in the `RateLimit-*` headers
     legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 })
 // Apply the rate limiting middleware to all requests
@@ -70,11 +77,15 @@ app.use(limiter)
 // app.set('trust proxy', false);
 app.use((req, res, next) => {
     res.set('Access-Control-Allow-Headers', 'Origin, Content-Type, Accept');
-    // console.log("user request headers", Object.values(req.rawHeaders));
-    // console.log("user ip", req.ip);
-    // console.log("auth header", req.headers.authorization);
+    // console.log("auth header", req.headers.authorization,req.ip);
     next()
 })
+app.use((req, res, next) => {
+    res.set('X-XSS-Protection', '1; mode=block')
+    next()
+})
+
+
 
 
 app.get("/", (req, res) => {
@@ -150,7 +161,7 @@ process.on('unhandledRejection', (err) => {
     server.close(() => {
         process.exit(1)
     })
-}) 
+})
 
 
-module.exports=app
+module.exports = app
