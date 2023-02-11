@@ -1,7 +1,7 @@
 const Jimp = require("jimp");
-const path=require("path")
+const path = require("path")
 
-const GS10formPicSaveAndSetup = async (imageSelct,type) => {
+const ImageSetup = async (imageSelct, type) => {
 
     // image setup compression
     const buffer = Buffer.from(imageSelct.replace(/^data:image\/(jpg|jpeg|png);base64,/, ''), 'base64');
@@ -12,10 +12,12 @@ const GS10formPicSaveAndSetup = async (imageSelct,type) => {
     const jimpResp = await Jimp.read(buffer);
     if (type === 'Gs10Form') {
         jimpResp.resize(550, Jimp.AUTO).write(path.resolve(__dirname, `../Storage/Forms/${imageName}`))
+    } else if (type === 'Admin') {
+        jimpResp.resize(550, Jimp.AUTO).write(path.resolve(__dirname, `../Storage/Admins/${imageName}`))
     }
 
 
     return imageName;
 }
 
-module.exports = GS10formPicSaveAndSetup;
+module.exports = ImageSetup;

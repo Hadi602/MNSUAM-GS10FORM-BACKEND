@@ -6,7 +6,8 @@ const ErrorHandler = require("../utils/errorHandler");
 
 
 
-
+// @Admin
+// CREAT Announcements
 const CreateAnnouncement = catchAsyncError(
     async (req, res, next) => {
         const admin = req.Admin;
@@ -20,35 +21,36 @@ const CreateAnnouncement = catchAsyncError(
             if (only_for === "students" && closingdate && semester) {
                 // console.log(semester);
                 // 1.finding forms
-                const findAllForms = await formModel.find({ Semester: semester }).select('_id UserId Semester username').lean().exec();
+                const findAllForms = await formModel.find({ Semester: semester }).select('UserId').lean().exec();
                 // console.log('forms', findAllForms.length, findAllForms);
 
                 if (findAllForms.length >= 1) {
-                    findAllForms?.map(async (val, index) => {
 
-                        const records = await userModel.findOneAndUpdate({ $and: [{ _id: val.UserId }, { GS10FormSubmissionStatus: 'true' }] }, {
-                            $set: {
-                                GS10FormSubmissionStatus: 'false'
-                            }
-                        }, { new: true })
-                        if (records) {
-                            // saving in DB
-                            await announcementModel({
-                                Title: title,
-                                Semester: semester,
-                                Only_For: only_for,
-                                Description: AnnouncementDescription,
-                                WhoCreated: role,
-                                StartingDate: new Date(Date.now()),
-                                ClosingDate: closingdate
-                            }).save();
-                            // console.log('actual record1', records);
-                            return res.status(200).json({ message: "successfully created", })
-                        } else {
-                            // console.log('actual record2', records);
-                            return next(new ErrorHandler('No Form updated!', 404))
+                    const ids = findAllForms.map(record => record.UserId);
+                    const records = await userModel.updateMany({ _id: { $in: ids }, GS10FormSubmissionStatus: 'true' }, {
+                        $set: {
+                            GS10FormSubmissionStatus: 'false'
                         }
                     })
+
+                    
+                    if (records.modifiedCount >= 1) {
+                        // 2. saving in DB
+                        const announcement = await announcementModel({
+                            Title: title,
+                            Semester: semester,
+                            Only_For: only_for,
+                            Description: AnnouncementDescription,
+                            WhoCreated: role,
+                            StartingDate: new Date(Date.now()),
+                            ClosingDate: closingdate
+                        }).save();
+                        // console.log('actual record1', records);
+                        return res.status(200).json({ message: "successfully created", id: announcement._id })
+                    } else {
+                        return next(new ErrorHandler('No Form updated!', 404))
+                    }
+
                 } else {
                     // no form found
                     return next(new ErrorHandler('No Form Found!', 202))
@@ -65,7 +67,7 @@ const CreateAnnouncement = catchAsyncError(
                     ClosingDate: closingdate ? closingdate : null
                 }).save();
                 if (announcement) {
-                    return res.status(200).json({ message: "successfully created", })
+                    return res.status(200).json({ message: "successfully created", id: announcement._id })
                 } else {
                     return next(new ErrorHandler('Error Occured', 400))
                 }
@@ -95,4 +97,43 @@ const GetAllAnnouncementes = catchAsyncError(
 )
 
 
-module.exports = { CreateAnnouncement, GetAllAnnouncementes }
+
+// @Admin
+// DELETE Announcements
+const DeleteAnnouncement = catchAsyncError(
+    async (req, res, next) => {
+        const admin = req.Admin;
+        if (admin) {
+            const { id } = req.params
+            console.log(id);
+            const deleteAnnouncement = await announcementModel.findByIdAndDelete({ _id: id }).lean().exec()
+            if (deleteAnnouncement) {
+                return res.status(200).json({ message: "Deleted Successfully" })
+            }
+        } else {
+            return next(new ErrorHandler('Bad Request', 400))
+        }
+    }
+)
+
+
+
+
+// @User
+// GET Announcements
+const GetAllAnnouncementesForUsers = catchAsyncError(
+    async (req, res, next) => {
+        const user = req.User;
+        if (user) {
+            const fetchAnnouncements = await announcementModel.find({}).lean().exec()
+            if (fetchAnnouncements.length === 0) {
+                return next(new ErrorHandler('No Record found!', 202))
+            }
+            return res.status(200).json({ Announcements: fetchAnnouncements })
+        } else {
+            return next(new ErrorHandler('Bad Request', 400))
+        }
+    }
+)
+
+module.exports = { CreateAnnouncement, GetAllAnnouncementes, DeleteAnnouncement ,GetAllAnnouncementesForUsers}

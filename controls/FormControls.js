@@ -4,7 +4,25 @@ const courses = require('../src/models/courses_model')
 const Gs10FormModel = require('../src/models/form_model')
 const users = require('../src/models/user_model')
 const GS10formPic = require('../utils/imageSetup')
-const jwt = require('jsonwebtoken')
+
+
+
+// fetching all degrees and related details for user
+const DegreesAndRelatedDetailsForUser = catchAsyncError(
+    async (req, res, next) => {
+        const User = req.User;
+        if (User) {
+            const findAllDegrees = await courses.find({}).select('Degree Program Courses _id').lean().exec();
+            if (findAllDegrees) {
+                return res.status(200).json({ message: "All Degree's and Related Details", Degrees: findAllDegrees })
+            } else {
+                return next(new ErrorHandler('Internal server error', 500))
+            }
+        } else {
+            return next(new ErrorHandler('Bad Request', 400))
+        }
+    }
+)
 
 
 
@@ -34,7 +52,6 @@ const specificUser = catchAsyncError(
     async (req, res, next) => {
         const validUser = req.User;
         const _id = req.params.id;
-        // console.log(validUser._id.toString());
         if (validUser) {
             if (!_id) {
                 return next(new ErrorHandler('Incomplete Information', 406))
@@ -65,23 +82,24 @@ const formCreate = catchAsyncError(
             if (!studentName || !fatherName || !registrationNumber || !cnicNumber || !formSubmissionDate || !semester || !regularStudentOrOther || !degree || !department || courses.length < 1 || !paidFee || !chllanFeeImage) {
                 return next(new ErrorHandler('Incomplete Information', 406))
             }
-
+            
 
             const findUser = await users.findOne({ _id: validUser._id }).populate('GS10Form')
             // finding that if form already exist or not
-            if (findUser.GS10Form.length > 1) {
+            // if (findUser.GS10Form.length > 1) {
                 const user = findUser.GS10Form.find((val, index) => {
                     // not with semester cz semester change but form submit
-                    if (registrationNumber === val.Registry_No && studentName === val.Student_Name && regularStudentOrOther === val.RegularORExtra && Semester === val.semester) {
+                    if (registrationNumber === val.Registry_No && studentName === val.Student_Name && regularStudentOrOther === val.RegularORExtra && semester === val.Semester) {
                         return val
                     }
                 });
+                
                 if (user) {
-                    return next(new ErrorHandler('This form already exists!', 202))
+                    return next(new ErrorHandler('This form already exists!', 409))
                 }
-            } else {
-                console.log('hamza',findUser.GS10FormSubmissionStatus);
+            // } else {
                 // if UGFormSubmissionStatus is off then here it will add to user document and make it true otherwise it will not add it will true by authority with announcement
+                
                 if (findUser.GS10FormSubmissionStatus === 'false') {
                     // saving image in Storage
                     const ImageRes = await GS10formPic(chllanFeeImage, 'Gs10Form')
@@ -110,10 +128,10 @@ const formCreate = catchAsyncError(
                         GS10FormSubmissionStatus: 'true'
                     }, { new: true });
                     res.status(200).json({ message: "Successfully Created.", GS10Form: saveGs10Form })
-                }else{
-                    return next(new ErrorHandler('you cannot submit form right now', 409))
+                } else {
+                    return next(new ErrorHandler('you cannot submit form untill your new submission date is issued!', 409))
                 }
-            }
+            // }
         } else {
             return next(new ErrorHandler('Bad Request', 400))
         }
@@ -145,4 +163,4 @@ const PopulatedUserForms = catchAsyncError(
 
 
 
-module.exports = { formCreate, programforUser, specificUser, PopulatedUserForms }
+module.exports = { formCreate, programforUser, specificUser, PopulatedUserForms, DegreesAndRelatedDetailsForUser }

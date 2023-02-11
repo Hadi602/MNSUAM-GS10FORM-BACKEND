@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
-const jwt=require('jsonwebtoken')
-const validator=require("validator")
+const jwt = require('jsonwebtoken')
+const validator = require("validator")
 
 const AdminSchema = new mongoose.Schema({
     username: { type: String, required: ['name is required', true] },
@@ -12,12 +12,14 @@ const AdminSchema = new mongoose.Schema({
     AccessToken: { type: String },
     activation: { type: Boolean },
     authorization: { type: Boolean },
-    CNIC:{type:String,required:true, unique:true},
-    WhoChangeThisRecord:{type:String },
+    CNIC: { type: String, required: true, unique: true },
+    WhoChangeThisRecord: { type: String },
+    AboutMe: { type: String, required: false },
+    PendingFormQueue: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Gs10' }], required: false },
 }, { timestamps: true })
 
 AdminSchema.methods.generateAccessToken = function () {
-    return this.AccessToken = jwt.sign({_id:this._id}, process.env.AccessToken_Secret, {
+    return this.AccessToken = jwt.sign({ _id: this._id }, process.env.AccessToken_Secret, {
         subject: process.env.AdminToken_Subject,
         expiresIn: process.env.AccessToken_Expire,
         algorithm: process.env.Token_Algorithum

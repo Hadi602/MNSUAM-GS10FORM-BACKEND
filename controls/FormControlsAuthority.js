@@ -31,7 +31,8 @@ const approveOrReject = catchAsyncError(
     async (req, res, next) => {
         const Admin = req.Admin;
         let { userId } = req.params;
-        const { isRole, formStatus, formId, Reason } = req.body;
+        const { isRole, formStatus, formId, Reason, Queuecheckbox } = req.body;
+        // console.log(Admin);
         if (Admin) {
             const updateFormStatusWithAuthSignature = {
                 Authority: isRole,
@@ -39,6 +40,10 @@ const approveOrReject = catchAsyncError(
                 Reason: Reason ? Reason : "",
                 Date: new Date(Date.now())
             };
+
+            if (formStatus === 'Pending' && Queuecheckbox !== true) {
+                return next(new ErrorHandler('Bad Request Not Maintaining Queue!', 400))
+            }
 
             if (!userId || !isRole || !formStatus || !formId) {
                 return next(new ErrorHandler('Bad Request', 400))
@@ -52,16 +57,28 @@ const approveOrReject = catchAsyncError(
             }, { new: true })
 
 
+            // if length is greater than 5 it means now i have to make form status COMPLETED
             const checkingFormAuthLength = updateGs10Form.AuthoritiesApproval;
-            if (checkingFormAuthLength.length >= 5 && !checkingFormAuthLength.map((val) => { return val.Status }).includes("Rejected")) {
+            if (formStatus!='Pending' && checkingFormAuthLength.length >= 5 && !checkingFormAuthLength.map((val) => { return val.Status }).includes("Rejected")) {
 
                 const updateFormStatus = await Gs10FormModel.findOneAndUpdate({ _id: formId }, {
                     FormStatus: "Complete"
-                }, { new: true })
+                }, { new: true }).lean().exec()
 
                 if (updateFormStatus) {
-                    return res.status(200).json({ Gs10Form: 'Approved and Completed!' })
+                    return res.status(200).json({ Gs10Form: 'Approved and Completed!',admin:Admin })
                 }
+            }
+
+
+            // if it status is pending and check is true then update admin doc to add this form in queue
+            // console.log(isRole, formStatus, formId, Reason, Queuecheckbox);
+            if (formStatus === 'Pending' && Queuecheckbox === true) {
+                const updatingAdminQueue = await admins.findOneAndUpdate({ isRole }, {
+                    $addToSet: { PendingFormQueue: updateGs10Form._id }
+                }, { new: true }).select('-AccessToken')
+                // console.log(updatingAdminQueue);
+                return res.status(200).json({ Gs10Form: 'Updated Successfully!', message: "Added in Queue",admin:updatingAdminQueue })
             }
 
 
@@ -77,6 +94,43 @@ const approveOrReject = catchAsyncError(
     }
 )
 
+
+
+// @Admin
+// Pending Form Operation Approve || Decline
+const PendingFormsAction = catchAsyncError(
+    async (req, res, next) => {
+        const Admin = req.Admin;
+        if (Admin) {
+            const { formId, adminId, status, isRole } = req.body;
+
+            if (!formId || !adminId || !status || !isRole) {
+                return next(new ErrorHandler('Incomplete Information', 406))
+            }
+
+
+            const updatingStatusOfForm = await Gs10FormModel.findOneAndUpdate({ _id: formId, AuthoritiesApproval: { $elemMatch: { Authority: isRole } } }, {
+                $set: {
+                    "AuthoritiesApproval.$.Authority": isRole,
+                    "AuthoritiesApproval.$.Status": status,
+                    "AuthoritiesApproval.$.Reason": '',
+                    "AuthoritiesApproval.$.Date": new Date(Date.now())
+                }
+            },
+                { new: true })
+
+            if (updatingStatusOfForm) {
+                const removeFormFromAdminQueue = await admins.findOneAndUpdate({ _id: adminId }, { $pull: { PendingFormQueue: formId } }, { new: true })
+                return res.status(200).json({ admin:removeFormFromAdminQueue })
+
+            } else {
+                return next(new ErrorHandler('No Record Updated!', 409))
+            }
+        } else {
+            return next(new ErrorHandler('Bad Request', 400))
+        }
+    }
+)
 
 
 // update Form with Authority signature
@@ -114,7 +168,6 @@ const updateGs10Form = catchAsyncError(
                 return res.status(200).json({ GS10Form: updateForm })
             } else {
                 return res.status(202).json({ message: "Rejected" })
-                console.log("hamza");
             }
         } else {
             return next(new ErrorHandler('Bad Request', 400))
@@ -130,4 +183,4 @@ const updateGs10Form = catchAsyncError(
 // 
 
 
-module.exports = { AllGs10Forms, approveOrReject, updateGs10Form }
+module.exports = { AllGs10Forms, approveOrReject, updateGs10Form, PendingFormsAction }

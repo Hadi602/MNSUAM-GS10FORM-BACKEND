@@ -143,14 +143,14 @@ const Login = catchAsyncError(
                     }
                 },
                 { new: true }
-            )
+            ).select('-AccessToken')
 
 
             // hashing tokens for cookie
             const hashAcsToken = `${hashedToken(token)}._HHQ${token}`
             const hashRefToken = `${hashedToken(refreshToken)}._HHQ${refreshToken}`
-            generateCookie("RfT", hashRefToken, new Date(Date.now() + (30 * 24 * 3600000)), res) // for refresh token cookie age set to 1 month
-            generateCookie("AcsT", hashAcsToken, new Date(Date.now() + (1000 * 60 * 30)), res) // for access token cookie age set to 5 minutes
+            generateCookie("RfT", hashRefToken, new Date(Date.now() + (20 * 24 * 3600000)), res) // for refresh token cookie age set to 1 month
+            generateCookie("AcsT", hashAcsToken, new Date(Date.now() + (1000 * 60 * 30)), res) // for access token cookie age set to 30 minutes
 
 
             return res.status(200).json({ admin: updateAdminStatus });
@@ -186,7 +186,7 @@ const Login = catchAsyncError(
                     // hashing tokens for cookie
                     const hashAcsToken = `${hashedToken(token)}._HHQ${token}`
                     const hashRefToken = `${hashedToken(refreshToken)}._HHQ${refreshToken}`
-                    generateCookie("RfT", hashRefToken, new Date(Date.now() + (30 * 24 * 3600000)), res) // for refresh token cookie age set to 1 month
+                    generateCookie("RfT", hashRefToken, new Date(Date.now() + (20 * 24 * 3600000)), res) // for refresh token cookie age set to 1 month
                     generateCookie("AcsT", hashAcsToken, new Date(Date.now() + (1000 * 60 * 30)), res) // for access token cookie age set to 5 minutes
 
 
@@ -217,14 +217,14 @@ const RefreshUserWithNewToken = catchAsyncError(async (req, res, next) => {
         // hashing tokens for cookie
         const hashAcsToken = `${hashedToken(accesstoken)}._HHQ${accesstoken}`
         const hashRefToken = `${hashedToken(refreshtoken)}._HHQ${refreshtoken}`
-        generateCookie("RfT", hashRefToken, new Date(Date.now() + (30 * 24 * 3600000)), res) // for refresh token cookie age set to 1 month
+        generateCookie("RfT", hashRefToken, new Date(Date.now() + (20 * 24 * 3600000)), res) // for refresh token cookie age set to 1 month
         generateCookie("AcsT", hashAcsToken, new Date(Date.now() + (1000 * 60 * 30)), res) // for access token ookie age set to 5 minutes
         return res.status(200).json({ admin: validadmin })
     } else if (validuser) {
         // hashing tokens for cookie
         const hashAcsToken = `${hashedToken(accesstoken)}._HHQ${accesstoken}`
         const hashRefToken = `${hashedToken(refreshtoken)}._HHQ${refreshtoken}`
-        generateCookie("RfT", hashRefToken, new Date(Date.now() + (30 * 24 * 3600000)), res) // for refresh token cookie age set to 1 month
+        generateCookie("RfT", hashRefToken, new Date(Date.now() + (20 * 24 * 3600000)), res) // for refresh token cookie age set to 1 month
         generateCookie("AcsT", hashAcsToken, new Date(Date.now() + (1000 * 60 * 30)), res) // for access token ookie age set to 5 minutes
         return res.status(200).json({ user: validuser })
     } else {

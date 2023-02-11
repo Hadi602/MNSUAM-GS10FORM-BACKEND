@@ -12,7 +12,7 @@ const refreshMiddleware = catchAsyncError(
     async (req, res, next) => {
         const { RfT } = req.cookies;
         const refreshTokenFormACookie = RfT?.split("._HHQ")[1]
-        if (!refreshTokenFormACookie) { 
+        if (!refreshTokenFormACookie) {
             return next(new ErrorHandler('unauthorized', 401))
         }
         const validRefreshToken = jwt.verify(refreshTokenFormACookie, process.env.RefreshToken_Secret)
@@ -32,7 +32,7 @@ const refreshMiddleware = catchAsyncError(
                     AccessToken: token
                 }, { new: true }
 
-            )
+            ).select('-AccessToken').populate('PendingFormQueue', 'createdAt Semester Student_Name Registry_No Department Degree FeePaid FormStatus Courses AuthoritiesApproval FeeVoucher _id RegularORExtra')
             req.Admin = updateUserAccessToken
             req.token = token //access token
             req.refreshToken = refreshTokenFormACookie //refresh token
@@ -50,7 +50,7 @@ const refreshMiddleware = catchAsyncError(
                     }
                 }, { new: true }
 
-            )
+            ).select('-AccessToken')
             req.User = updateUserAccessToken
             req.token = token //access token
             req.refreshToken = refreshTokenFormACookie //refresh token

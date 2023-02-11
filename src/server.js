@@ -77,6 +77,7 @@ app.use(limiter)
 // app.set('trust proxy', false);
 app.use((req, res, next) => {
     res.set('Access-Control-Allow-Headers', 'Origin, Content-Type, Accept');
+    res.set('cross-origin-resource-policy', 'http://localhost:5173/'); //for sharing resources such as images if not set then images will not be get on client side must read more about cross same lax origin
     // console.log("auth header", req.headers.authorization,req.ip);
     next()
 })
@@ -94,7 +95,10 @@ app.get("/", (req, res) => {
 
 
 
-
+// app.use((req, res, next) => {
+//     console.log('hamza',req.body)
+//     next()
+// })
 
 
 
