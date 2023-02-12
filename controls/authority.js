@@ -17,7 +17,7 @@ const createRole = catchAsyncError(
         }
 
         const findSuperAdmin = await admins.findOne({ $and: [{ email: MyEmail }, { isRole: 'ADMIN' }, { password: MyPassword }] });
-        if (!findSuperAdmin) {
+        if (findSuperAdmin) {
             return next(new ErrorHandler('Bad Request', 400))
         }
 console.log('ok');
