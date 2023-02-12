@@ -7,6 +7,7 @@ const generateCookie = (name, token, expTime, res) => {
         httpOnly: true,
         secure: true,
         expires: expTime,
+        sameSite: 'None'
         // maxAge: expTime
     })
     return res
