@@ -6,7 +6,7 @@ const ErrorHandler = require('../utils/errorHandler');
 // create roles
 const createRole = catchAsyncError(
     async (req, res, next) => {
-        const { role, NewEmail, NewPassword, MyEmail, MyPassword, username,cnic } = req.body;
+        const { role, NewEmail, NewPassword, MyEmail, MyPassword, username, cnic } = req.body;
 
         if (!username || !NewEmail || !NewPassword || !role || !cnic) {
             return next(new ErrorHandler('Incomplete Information', 406))
@@ -17,20 +17,23 @@ const createRole = catchAsyncError(
         }
 
         const findSuperAdmin = await admins.findOne({ $and: [{ email: MyEmail }, { isRole: 'ADMIN' }, { password: MyPassword }] });
+        console.log('ok');
         if (findSuperAdmin) {
+            const createNewRole = await admins({
+                username,
+                email: NewEmail, password: NewPassword,
+                isRole: role,
+                status: false,
+                UserImage: "",
+                CNIC: cnic,
+                authorization: true
+            }).save();
+            res.status(201).json({ newAuthority: createNewRole })
+        } else {
             return next(new ErrorHandler('Bad Request', 400))
         }
-console.log('ok');
-        const createNewRole = await admins({
-            username,
-            email: NewEmail, password: NewPassword,
-            isRole: role,
-            status: false,
-            UserImage: "",
-            CNIC:cnic,
-            authorization:true
-        }).save();
-        res.status(201).json({ newAuthority: createNewRole })
+
+
     }
 );
 
@@ -118,7 +121,7 @@ const deleteAuthority = catchAsyncError(
     async (req, res, next) => {
         let params = req.params.id;
         const admin = req.Admin;
-        
+
         if (admin.isRole === "ADMIN") {
             // prevent self deletion
             if (admin._id.toString() === params) {

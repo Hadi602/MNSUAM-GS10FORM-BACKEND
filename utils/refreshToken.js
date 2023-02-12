@@ -1,6 +1,6 @@
 const refreshModel = require("../src/models/refresh_token")
 
-const generateRefreshToken = async (User, type, route) => {
+const generatorRefreshToken = async (User, type, route) => {
 
     if (User) {
         if (type === "Admin") {
@@ -16,7 +16,7 @@ const generateRefreshToken = async (User, type, route) => {
                 // console.log(updaterefreshToken.refreshToken);
                 return updaterefreshToken.refreshToken
             } else {
-                const refreshToken = await refreshModel({
+                const refreshToken = await refreshModel({ 
                     AdminId: User._id
                 }).save()
                 const refToken = refreshToken.generateRefreshToken()
@@ -33,7 +33,7 @@ const generateRefreshToken = async (User, type, route) => {
         } else if (type === "User") {
             const findRefreshToken = await refreshModel.findOne({ UserId: User._id })
             if (findRefreshToken) {
-                console.log("yes");
+                // console.log("yes");
                 const updaterefreshToken = await refreshModel.findByIdAndUpdate(
                     { _id: findRefreshToken._id },
                     {
@@ -41,7 +41,7 @@ const generateRefreshToken = async (User, type, route) => {
                     },
                     { new: true }
                 )
-                console.log(updaterefreshToken.refreshToken);
+                // console.log(updaterefreshToken.refreshToken);
                 return updaterefreshToken.refreshToken
             } else {
                 const refreshToken = await refreshModel({
@@ -66,4 +66,4 @@ const generateRefreshToken = async (User, type, route) => {
         return null;
     }
 }
-module.exports = generateRefreshToken;
+module.exports = generatorRefreshToken;

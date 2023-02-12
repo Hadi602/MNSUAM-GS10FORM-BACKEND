@@ -59,7 +59,7 @@ const specificUser = catchAsyncError(
 
             const fetchSpecificForm = await Gs10FormModel.findOne({ _id });
             if (fetchSpecificForm) {
-                return res.status(200).json({ user: fetchSpecificForm })
+                return res.status(200).json({ form: fetchSpecificForm })
             }
             return next(new ErrorHandler('user not found!', 202))
         } else {
@@ -82,55 +82,55 @@ const formCreate = catchAsyncError(
             if (!studentName || !fatherName || !registrationNumber || !cnicNumber || !formSubmissionDate || !semester || !regularStudentOrOther || !degree || !department || courses.length < 1 || !paidFee || !chllanFeeImage) {
                 return next(new ErrorHandler('Incomplete Information', 406))
             }
-            
+
 
             const findUser = await users.findOne({ _id: validUser._id }).populate('GS10Form')
             // finding that if form already exist or not
             // if (findUser.GS10Form.length > 1) {
-                const user = findUser.GS10Form.find((val, index) => {
-                    // not with semester cz semester change but form submit
-                    if (registrationNumber === val.Registry_No && studentName === val.Student_Name && regularStudentOrOther === val.RegularORExtra && semester === val.Semester) {
-                        return val
-                    }
-                });
-                
-                if (user) {
-                    return next(new ErrorHandler('This form already exists!', 409))
+            const user = findUser.GS10Form.find((val, index) => {
+                // not with semester cz semester change but form submit
+                if (registrationNumber === val.Registry_No && studentName === val.Student_Name && regularStudentOrOther === val.RegularORExtra && semester === val.Semester) {
+                    return val
                 }
+            });
+
+            if (user) {
+                return next(new ErrorHandler('This form already exists!', 409))
+            }
             // } else {
-                // if UGFormSubmissionStatus is off then here it will add to user document and make it true otherwise it will not add it will true by authority with announcement
-                
-                if (findUser.GS10FormSubmissionStatus === 'false') {
-                    // saving image in Storage
-                    const ImageRes = await GS10formPic(chllanFeeImage, 'Gs10Form')
+            // if UGFormSubmissionStatus is off then here it will add to user document and make it true otherwise it will not add it will true by authority with announcement
 
-                    // saving form 
-                    const saveGs10Form = await Gs10FormModel({
-                        UserId: validUser._id,
-                        Student_Name: studentName,
-                        Father_Name: fatherName,
-                        Registry_No: registrationNumber,
-                        Date_of_First_Submission: formSubmissionDate,
-                        Semester: semester,
-                        FeeVoucher: `/Storage/Forms/${ImageRes}`,
-                        Degree: degree,
-                        Department: department,
-                        Courses: courses,
-                        RegularORExtra: regularStudentOrOther,
-                        FeePaid: paidFee,
-                    }).save();
+            if (findUser.GS10FormSubmissionStatus === 'false') {
+                // saving image in Storage
+                const ImageRes = await GS10formPic(chllanFeeImage, 'Gs10Form')
 
-                    // updating user record
-                    await users.findOneAndUpdate({ _id: findUser._id }, {
-                        $addToSet: {
-                            GS10Form: saveGs10Form._id
-                        },
-                        GS10FormSubmissionStatus: 'true'
-                    }, { new: true });
-                    res.status(200).json({ message: "Successfully Created.", GS10Form: saveGs10Form })
-                } else {
-                    return next(new ErrorHandler('you cannot submit form untill your new submission date is issued!', 409))
-                }
+                // saving form 
+                const saveGs10Form = await Gs10FormModel({
+                    UserId: validUser._id,
+                    Student_Name: studentName,
+                    Father_Name: fatherName,
+                    Registry_No: registrationNumber,
+                    Date_of_First_Submission: formSubmissionDate,
+                    Semester: semester,
+                    FeeVoucher: `/Storage/Forms/${ImageRes}`,
+                    Degree: degree,
+                    Department: department,
+                    Courses: courses,
+                    RegularORExtra: regularStudentOrOther,
+                    FeePaid: paidFee,
+                }).save();
+
+                // updating user record
+                await users.findOneAndUpdate({ _id: findUser._id }, {
+                    $addToSet: {
+                        GS10Form: saveGs10Form._id
+                    },
+                    GS10FormSubmissionStatus: 'true'
+                }, { new: true });
+                res.status(200).json({ message: "Successfully Created.", GS10Form: saveGs10Form })
+            } else {
+                return next(new ErrorHandler('you cannot submit form untill your new submission date is issued!', 409))
+            }
             // }
         } else {
             return next(new ErrorHandler('Bad Request', 400))

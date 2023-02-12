@@ -95,48 +95,6 @@ app.get("/", (req, res) => {
 
 
 
-// app.use((req, res, next) => {
-//     console.log('hamza',req.body)
-//     next()
-// })
-
-
-
-
-// app.use(session({
-//     secret: 'Keep it secret',
-//     name: 'uSid',
-//     resave: false,
-//     saveUninitialized: true,
-//     cookie: {
-//         httpOnly: true,
-//         maxAge: 3600000
-//     }
-// }))
-// app.use(passport.initialize());
-// app.use(passport.session())
-
-// app.use((req, res, next) => {
-//     console.log(req.session);
-//     next()
-// })
-
-
-// auto logout user
-// app.use((req, res, next) => {
-//     const { RfT: refreshTokenFormACookie, AcsT: AccessToken } = req.cookies;
-//     if (refreshTokenFormACookie || AccessToken) {
-//         console.log(AccessToken, 'Access Token');
-//         console.log(refreshTokenFormACookie, 'Refresh Token');
-//         setTimeout(() => {
-//             req.userPoint = "";
-
-//             console.log("hamza qureshi");
-//         }, 1000 * 60 * 2)
-//     }
-
-//     next()
-// })
 
 
 
@@ -147,6 +105,14 @@ app.use('/Storage', express.static(path.join(__dirname, '../Storage')));
 
 // Api Routes
 app.use("/api", routes)
+app.all("*", (req, res) => {
+    res.status(404)
+    if (req.accepts('json')) {
+        res.json({ message: "Not Found!" })
+    } else {
+        res.type('txt').send('Not Found!')
+    }
+})
 
 // error handler
 app.use(errorHandlerMiddleware)

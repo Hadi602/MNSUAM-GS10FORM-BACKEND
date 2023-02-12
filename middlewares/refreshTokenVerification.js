@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const refreshModel = require("../src/models/refresh_token")
 const catchAsyncError = require('./catchAsyncError')
 const ErrorHandler = require('../utils/errorHandler')
-const generateRefreshToken = require("../utils/refreshToken")
+// const generateRefreshToken = require("../utils/refreshToken")
 const user = require("../src/models/user_model");
 const admin = require("../src/models/admin_model");
 
